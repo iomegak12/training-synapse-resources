@@ -5,6 +5,9 @@
 		"workspaceName": {
 			"value": "trainingsynapseresources"
 		},
+		"CosmosDb1_connectionString": {
+			"value": ""
+		},
 		"trainingsynapseresources-WorkspaceDefaultSqlServer_connectionString": {
 			"value": ""
 		},
