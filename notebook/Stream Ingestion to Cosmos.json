@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "e31ea114-55cf-4b76-8715-314e90a0a640"
+				"spark.autotune.trackingId": "3822d826-9728-4291-b3aa-ca815be45df1"
 			}
 		},
 		"metadata": {
@@ -113,7 +113,108 @@
 					"        .writeStream \\\r\n",
 					"        .format(\"cosmos.oltp\") \\\r\n",
 					"        .outputMode(\"append\") \\\r\n",
-					"        .option(\"spark.synapse.linkedService\")"
+					"        .option(\"spark.synapse.linkedService\", \"CosmosDb1\") \\\r\n",
+					"        .option(\"spark.cosmos.container\", \"IoTSignals\") \\\r\n",
+					"        .option(\"checkpointLocation\", \"/tmp/checkpoint-1\") \\\r\n",
+					"        .start()"
+				],
+				"execution_count": 3
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"streamQuery.status"
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"streamQuery.awaitTermination()"
+				],
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"streamQuery.stop()"
+				],
+				"execution_count": 6
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"path = \"/IoTDeviceInfo.csv\"\r\n",
+					"\r\n",
+					"dfDeviceInfo = (spark.read.csv(path, header = True, inferSchema=True)"
+				],
+				"execution_count": 7
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"dfDeviceInfo \\\r\n",
+					"    .write \\\r\n",
+					"    .format(\"cosmos.oltp\") \\\r\n",
+					"    .option(\"spark.synapse.linkedService\", \"CosmosDb1\") \\\r\n",
+					"    .option(\"spark.cosmos.container\", \"IoTDeviceInfo\") \\\r\n",
+					"    .option(\"spark.cosmos.write.upsertEnabled\", \"true\") \\\r\n",
+					"    .start()"
 				],
 				"execution_count": null
 			}
