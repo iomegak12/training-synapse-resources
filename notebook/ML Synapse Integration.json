@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "d870806c-69d1-495a-a73c-471b51737edb"
+				"spark.autotune.trackingId": "ec0ff49c-0b3d-4e47-a777-5c7f8eaf9add"
 			}
 		},
 		"metadata": {
@@ -76,9 +76,66 @@
 				},
 				"source": [
 					"pd_df_california_housing_inferencing = pd_df_california_housing.sample(frac=0.01)\r\n",
-					"pd_df_california_housing_training = pd_df_california_housing.drop(pd_df_california_housing_inferencing.index)"
+					"pd_df_california_housing_training = pd_df_california_housing.drop(pd_df_california_housing_inferencing.index)\r\n",
+					"pd_df_california_housing_inferencing[\"target\"] = 0.0"
 				],
-				"execution_count": null
+				"execution_count": 2
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"spark_df_california_housing_inferencing = spark.createDataFrame(pd_df_california_housing_inferencing)\r\n",
+					"spark_df_california_housing_training = spark.createDataFrame(pd_df_california_housing_training)\r\n",
+					"\r\n",
+					"spark_df_california_housing_inferencing.createOrReplaceTempView(\"CaliforniaInference\")\r\n",
+					"spark_df_california_housing_training.write.mode(\"overwrite\").saveAsTable(\"default.CaliforniaTrain\")"
+				],
+				"execution_count": 3
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "scala"
+					}
+				},
+				"source": [
+					"%%spark\r\n",
+					"\r\n",
+					"val scala_df_train = spark.sqlContext.sql(\"SELECT * FROM CaliforniaTrain\")\r\n",
+					"\r\n",
+					"scala_df_train\r\n",
+					"    .write\r\n",
+					"    .synapsesql(\"SQLPool01v1.dbo.CaliforniaTrain\", Constants.INTERNAL)\r\n",
+					"\r\n",
+					"val scala_df_inference = spark.sqlContext.sql(\"SELECT * FROM CaliforniaInference\")\r\n",
+					"\r\n",
+					"scala_df_inference\r\n",
+					"    .write\r\n",
+					"    .synapsesql(\"SQLPool01v1.dbo.CaliforniaInference\", Constants.INTERNAL)\r\n",
+					""
+				],
+				"execution_count": 5
 			}
 		]
 	}
