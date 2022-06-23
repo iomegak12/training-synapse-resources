@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "a5586db9-a25f-46fb-b228-5755765601a1"
+				"spark.autotune.trackingId": "d4317309-b23a-48dd-8ef7-a5a8f6ee169e"
 			}
 		},
 		"metadata": {
@@ -109,6 +109,277 @@
 					"print(\"MAE : \" + str(mae))"
 				],
 				"execution_count": 8
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Learning Native Spark Library"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"from pyspark.ml.feature import VectorAssembler\r\n",
+					"\r\n",
+					"boston_sp = spark.createDataFrame(boston_pd)\r\n",
+					"display(boston_sp.take(5))"
+				],
+				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"boston_train = spark.createDataFrame(boston_pd[:400])\r\n",
+					"boston_test = spark.createDataFrame(boston_pd[400:])\r\n",
+					"\r\n",
+					"assembler = VectorAssembler(\r\n",
+					"    inputCols = boston_train.schema.names[:(boston_pd.shape[1]-1)],\r\n",
+					"    outputCol = \"features\"\r\n",
+					")\r\n",
+					"\r\n",
+					"boston_train = assembler.transform(boston_train).select(\"features\", \"target\")\r\n",
+					"boston_test = assembler.transform(boston_test).select(\"features\", \"target\")\r\n",
+					"\r\n",
+					"display(boston_train.take(5))"
+				],
+				"execution_count": 10
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from pyspark.ml.regression import LinearRegression\r\n",
+					"\r\n",
+					"lr = LinearRegression(\r\n",
+					"    maxIter = 10,\r\n",
+					"    regParam = 0.1,\r\n",
+					"    elasticNetParam = 0.5,\r\n",
+					"    labelCol = \"target\")\r\n",
+					"\r\n",
+					"model = lr.fit(boston_train)\r\n",
+					"\r\n",
+					"boston_pred = model.transform(boston_test)\r\n",
+					"\r\n",
+					"r = boston_pred.stat.corr(\"prediction\", \"target\")\r\n",
+					"\r\n",
+					"print(\"R-Squared : \" + str(r**2))"
+				],
+				"execution_count": 11
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Learning Thread Pools"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from sklearn.ensemble import RandomForestRegressor as RFR\r\n",
+					"from multiprocessing.pool import ThreadPool\r\n",
+					"\r\n",
+					"pool = ThreadPool(4)\r\n",
+					"\r\n",
+					"parameters = [10,20,50]\r\n",
+					"\r\n",
+					"def sklearn_random_forest(trees, X_train, X_test, y_train, y_test):\r\n",
+					"    rf = RFR(n_estimators=trees)\r\n",
+					"    model = rf.fit(X_train, y_train)\r\n",
+					"\r\n",
+					"    y_pred = model.predict(X_test)\r\n",
+					"    r = pearsonr(y_pred, y_test)\r\n",
+					"\r\n",
+					"    return [trees, r[0]**2]\r\n",
+					"\r\n",
+					"pool.map(lambda trees: sklearn_random_forest(trees, X_train, X_test, y_train, y_test), parameters)"
+				],
+				"execution_count": 12
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from pyspark.ml.regression import RandomForestRegressor\r\n",
+					"\r\n",
+					"def mllib_random_forest(trees, boston_train, boston_test):\r\n",
+					"    rf = RandomForestRegressor(numTrees=trees, labelCol=\"target\")\r\n",
+					"    model = rf.fit(boston_train)\r\n",
+					"    boston_pred = model.transform(boston_test)\r\n",
+					"    r = boston_pred.stat.corr(\"prediction\", \"target\")\r\n",
+					"\r\n",
+					"    return [trees, r**2]\r\n",
+					"\r\n",
+					"pool.map(lambda trees: mllib_random_forest(trees, boston_train, boston_test), parameters)"
+				],
+				"execution_count": 13
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Learning Pandas UDFs"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					""
+				],
+				"execution_count": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from pyspark.sql.functions import PandasUDFType, pandas_udf\r\n",
+					"from pyspark.sql.types import *\r\n",
+					"\r\n",
+					"boston_sp.createOrReplaceTempView(\"boston\")\r\n",
+					"\r\n",
+					"full_df = spark.sql(\"\"\"\r\n",
+					"\r\n",
+					"SELECT *\r\n",
+					"FROM (\r\n",
+					"    SELECT *, CASE WHEN rand() < 0.8 THEN 1 ELSE 0 END AS training\r\n",
+					"    FROM boston\r\n",
+					") b\r\n",
+					"CROSS JOIN (\r\n",
+					"    SELECT 11 AS trees\r\n",
+					"    UNION ALL SELECT 20 AS trees\r\n",
+					"    UNION ALL SELECT 50 AS trees\r\n",
+					")\r\n",
+					"\r\n",
+					"\"\"\")\r\n",
+					"\r\n",
+					"schema = StructType([\r\n",
+					"    StructField(\"trees\", LongType(), True),\r\n",
+					"    StructField(\"r_squared\", DoubleType(), True)])\r\n",
+					"\r\n",
+					"@pandas_udf(schema, PandasUDFType.GROUPED_MAP)\r\n",
+					"def train_RF(boston_pd):\r\n",
+					"    trees = boston_pd['trees'].unique()[0]\r\n",
+					"\r\n",
+					"    boston_train = boston_pd[boston_pd[\"training\"] == 1]\r\n",
+					"    boston_test = boston_pd[boston_pd[\"training\"] == 0]\r\n",
+					"\r\n",
+					"    y_train = boston_train[\"target\"]\r\n",
+					"    X_train = boston_train.drop([\"target\"], axis = 1)\r\n",
+					"\r\n",
+					"    y_test = boston_test[\"target\"]\r\n",
+					"    X_test = boston_test.drop([\"target\"], axis = 1)\r\n",
+					"\r\n",
+					"    rf = RFR(n_estimators = trees)\r\n",
+					"    model = rf.fit(X_train, y_train)\r\n",
+					"    y_pred = model.predict(X_test)\r\n",
+					"    r = pearsonr(y_pred, y_test)\r\n",
+					"\r\n",
+					"    return pd.DataFrame({\r\n",
+					"        'trees': trees,\r\n",
+					"        'r_squared': (r[0] ** 2)\r\n",
+					"    }, index = [0])\r\n",
+					"\r\n",
+					"\r\n",
+					"results = full_df.groupby(\"trees\").apply(train_RF)   \r\n",
+					"\r\n",
+					"print(results.take(3))"
+				],
+				"execution_count": 18
 			}
 		]
 	}
