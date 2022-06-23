@@ -3,17 +3,21 @@
 	"properties": {
 		"nbformat": 4,
 		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "SparkPool001v1",
+			"type": "BigDataPoolReference"
+		},
 		"sessionProperties": {
-			"driverMemory": "28g",
-			"driverCores": 4,
-			"executorMemory": "28g",
-			"executorCores": 4,
+			"driverMemory": "56g",
+			"driverCores": 8,
+			"executorMemory": "56g",
+			"executorCores": 8,
 			"numExecutors": 2,
 			"conf": {
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "3371708d-fc7c-4648-9046-a7dad7dd8ab3"
+				"spark.autotune.trackingId": "a5586db9-a25f-46fb-b228-5755765601a1"
 			}
 		},
 		"metadata": {
@@ -21,10 +25,25 @@
 			"enableDebugMode": false,
 			"kernelspec": {
 				"name": "synapse_pyspark",
-				"display_name": "python"
+				"display_name": "Synapse PySpark"
 			},
 			"language_info": {
 				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/924cf5c7-5f72-42ba-98ee-7ea905016982/resourceGroups/trainingresourcegroupv10/providers/Microsoft.Synapse/workspaces/trainingsynapseresources/bigDataPools/SparkPool001v1",
+				"name": "SparkPool001v1",
+				"type": "Spark",
+				"endpoint": "https://trainingsynapseresources.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SparkPool001v1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "3.1",
+				"nodeCount": 3,
+				"cores": 8,
+				"memory": 56,
+				"automaticScaleJobs": false
 			},
 			"sessionKeepAliveTimeout": 30
 		},
@@ -32,9 +51,64 @@
 			{
 				"cell_type": "code",
 				"source": [
-					""
+					"import numpy as np\r\n",
+					"import pandas as pd\r\n",
+					"\r\n",
+					"from sklearn.datasets import load_boston\r\n",
+					"\r\n",
+					"boston = load_boston()\r\n",
+					"\r\n",
+					"boston_pd = pd \\\r\n",
+					"    .DataFrame( \\\r\n",
+					"        data = np.c_[boston[\"data\"], boston[\"target\"]], \\\r\n",
+					"        columns = np.append(boston[\"feature_names\"], \"target\")) \\\r\n",
+					"    .sample(frac = 1)\r\n",
+					"\r\n",
+					"print(boston_pd.shape)\r\n",
+					"\r\n",
+					"boston_pd.head(5)"
 				],
-				"execution_count": null
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from sklearn.linear_model import LinearRegression\r\n",
+					"from scipy.stats.stats import pearsonr\r\n",
+					"\r\n",
+					"y = boston_pd[\"target\"]\r\n",
+					"X = boston_pd.drop([\"target\"], axis = 1)\r\n",
+					"\r\n",
+					"X_train = X[:400]\r\n",
+					"X_test = X[400:]\r\n",
+					"\r\n",
+					"y_train = y[:400]\r\n",
+					"y_test = y[400:]\r\n",
+					"\r\n",
+					"lr = LinearRegression()\r\n",
+					"model = lr.fit(X_train, y_train)\r\n",
+					"\r\n",
+					"y_pred = model.predict(X_test)\r\n",
+					"\r\n",
+					"r = pearsonr(y_pred, y_test)\r\n",
+					"\r\n",
+					"mae = sum(abs(y_pred - y_test)) / len(y_test)\r\n",
+					"\r\n",
+					"print(\"R-Squared : \" + str(r[0] ** 2))\r\n",
+					"print(\"MAE : \" + str(mae))"
+				],
+				"execution_count": 8
 			}
 		]
 	}
