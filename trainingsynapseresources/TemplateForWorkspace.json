@@ -2684,7 +2684,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "0666ed82-d2f4-46df-aa3a-2e6c24bf68c7"
+						"spark.autotune.trackingId": "4b909540-5487-4369-86c3-5fd638c6f793"
 					}
 				},
 				"metadata": {
@@ -2864,7 +2864,7 @@
 						"source": [
 							"path = \"/IoTDeviceInfo.csv\"\r\n",
 							"\r\n",
-							"dfDeviceInfo = (spark.read.csv(path, header = True, inferSchema=True)"
+							"dfDeviceInfo = (spark.read.csv(path, header = True, inferSchema=True))"
 						],
 						"outputs": [],
 						"execution_count": 7
@@ -2976,6 +2976,206 @@
 			},
 			"dependsOn": [],
 			"location": "eastus"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- Create a stored procedure for storing the scoring script.\nCREATE PROCEDURE dbo.uspProcessHousePricing\nAS\nBEGIN\n-- Select input scoring data and assign aliases.\nWITH InputData AS\n(\n    SELECT\n        CAST([MedInc] AS [real]) AS [MedInc],\n        CAST([HouseAge] AS [real]) AS [HouseAge],\n        CAST([AveRooms] AS [real]) AS [AveRooms],\n        CAST([AveBedrms] AS [real]) AS [AveBedrms],\n        CAST([Population] AS [real]) AS [Population],\n        CAST([AveOccup] AS [real]) AS [AveOccup],\n        CAST([Latitude] AS [real]) AS [Latitude],\n        CAST([Longitude] AS [real]) AS [Longitude]\n    FROM [dbo].[CaliforniaTrain]\n)\n-- Using T-SQL Predict command to score machine learning models. \nSELECT *\nFROM PREDICT (MODEL = (SELECT [model] FROM dbo.ProcessedResults WHERE [ID] = 'trainingsynapseresources-californiatrain-20220623111249-Best:1'),\n              DATA = InputData,\n              RUNTIME = ONNX) WITH ([variable_out1] [real])\nEND\nGO\n\n-- Execute the above stored procedure.\nEXEC dbo.uspProcessHousePricing",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "SQLPool01v1",
+						"poolName": "SQLPool01v1"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Pipeline 1')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "CosmosDbSqlApiSink",
+								"writeBehavior": "insert"
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "rotortype",
+											"type": "String"
+										},
+										"sink": {
+											"path": "$.rotortype"
+										}
+									},
+									{
+										"source": {
+											"name": "Latitude",
+											"type": "String"
+										},
+										"sink": {
+											"path": "$.latitude"
+										}
+									},
+									{
+										"source": {
+											"name": "deviceid",
+											"type": "String"
+										},
+										"sink": {
+											"path": "$.deviceid"
+										}
+									},
+									{
+										"source": {
+											"name": "Longitude",
+											"type": "String"
+										},
+										"sink": {
+											"path": "$.longitude"
+										}
+									},
+									{
+										"source": {
+											"name": "devicetype",
+											"type": "String"
+										},
+										"sink": {
+											"path": "$.devicetype"
+										}
+									}
+								]
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DelimitedText1",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "CosmosDbSqlApiCollection1",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/DelimitedText1')]",
+				"[concat(variables('workspaceId'), '/datasets/CosmosDbSqlApiCollection1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DelimitedText1')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "trainingsynapseresources-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "IoTDeviceInfo.csv",
+						"fileSystem": "synapsedlsfsv10"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/trainingsynapseresources-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CosmosDbSqlApiCollection1')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "CosmosDb1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "CosmosDbSqlApiCollection",
+				"schema": {},
+				"typeProperties": {
+					"collectionName": "IoTDeviceInfo"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/CosmosDb1')]"
+			]
 		}
 	]
 }
