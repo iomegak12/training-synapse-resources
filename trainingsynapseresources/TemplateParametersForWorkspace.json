@@ -8,6 +8,12 @@
 		"trainingsynapseresources-WorkspaceDefaultSqlServer_connectionString": {
 			"value": ""
 		},
+		"AzureMLService1_properties_typeProperties_subscriptionId": {
+			"value": "924cf5c7-5f72-42ba-98ee-7ea905016982"
+		},
+		"AzureMLService1_properties_typeProperties_resourceGroupName": {
+			"value": "trainingresourcegroupv10"
+		},
 		"trainingstoragev101_properties_typeProperties_url": {
 			"value": "https://trainingstoragev101.dfs.core.windows.net/"
 		},
