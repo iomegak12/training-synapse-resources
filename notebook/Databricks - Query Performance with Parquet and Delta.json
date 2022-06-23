@@ -1,0 +1,68 @@
+{
+	"name": "Databricks - Query Performance with Parquet and Delta",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "SparkPool001v1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "56g",
+			"driverCores": 8,
+			"executorMemory": "56g",
+			"executorCores": 8,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "682c7d82-7d5b-4d00-8c71-9ced7fa3d3a4"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/924cf5c7-5f72-42ba-98ee-7ea905016982/resourceGroups/trainingresourcegroupv10/providers/Microsoft.Synapse/workspaces/trainingsynapseresources/bigDataPools/SparkPool001v1",
+				"name": "SparkPool001v1",
+				"type": "Spark",
+				"endpoint": "https://trainingsynapseresources.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SparkPool001v1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "3.1",
+				"nodeCount": 3,
+				"cores": 8,
+				"memory": 56,
+				"automaticScaleJobs": false
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"from notebookutils import mssparkutils\r\n",
+					"\r\n",
+					"mssparkutils.fs.mount(\r\n",
+					"    \"abfss://data@trainingstoragev101.dfs.core.windows.net/\",\r\n",
+					"    \"/test\",\r\n",
+					"    {\r\n",
+					"        \"linkedService\": \"trainingstoragev101\"\r\n",
+					"    }\r\n",
+					")"
+				],
+				"execution_count": 1
+			}
+		]
+	}
+}
