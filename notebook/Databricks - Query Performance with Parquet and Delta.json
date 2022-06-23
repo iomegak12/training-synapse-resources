@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "682c7d82-7d5b-4d00-8c71-9ced7fa3d3a4"
+				"spark.autotune.trackingId": "0f07fe79-db9b-4be5-a9fa-2651c3f9b53d"
 			}
 		},
 		"metadata": {
@@ -62,6 +62,286 @@
 					")"
 				],
 				"execution_count": 1
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"jobId = mssparkutils.env.getJobId()\r\n",
+					"path = \"synfs:/\" + jobId + \"/test/data.csv\"\r\n",
+					"\r\n",
+					"print(path)"
+				],
+				"execution_count": 2
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"flights = spark \\\r\n",
+					"    .read \\\r\n",
+					"    .format(\"csv\") \\\r\n",
+					"    .option(\"header\", \"true\") \\\r\n",
+					"    .option(\"inferSchema\", \"true\") \\\r\n",
+					"    .load(path)"
+				],
+				"execution_count": 3
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"flights.printSchema()"
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"flights \\\r\n",
+					"    .write \\\r\n",
+					"    .format(\"parquet\") \\\r\n",
+					"    .mode(\"overwrite\") \\\r\n",
+					"    .partitionBy(\"Origin\") \\\r\n",
+					"    .save(\"/tmp/flights_parquet\")"
+				],
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from pyspark.sql.functions import count\r\n",
+					"\r\n",
+					"flights_parquet = \\\r\n",
+					"    spark \\\r\n",
+					"        .read \\\r\n",
+					"        .format(\"parquet\") \\\r\n",
+					"        .load(\"/tmp/flights_parquet\")"
+				],
+				"execution_count": 6
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"display(\r\n",
+					"    flights_parquet\r\n",
+					"        .filter(\"DayOfWeek = 1\")\r\n",
+					"        .groupBy(\"Month\", \"Origin\")\r\n",
+					"        .agg(count(\"*\").alias(\"TotalFlights\"))\r\n",
+					"        .orderBy(\"TotalFlights\", ascending = False)\r\n",
+					"        .limit(20)\r\n",
+					")"
+				],
+				"execution_count": 7
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"flights \\\r\n",
+					"    .write \\\r\n",
+					"    .format(\"delta\") \\\r\n",
+					"    .mode(\"overwrite\") \\\r\n",
+					"    .partitionBy(\"Origin\") \\\r\n",
+					"    .save(\"/tmp/flights_delta\")"
+				],
+				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%sql\r\n",
+					"\r\n",
+					"DROP TABLE IF EXISTS flights;"
+				],
+				"execution_count": 10
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%sql\r\n",
+					"\r\n",
+					"CREATE TABLE flights\r\n",
+					"USING DELTA\r\n",
+					"LOCATION '/tmp/flights_delta';"
+				],
+				"execution_count": 11
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%sql\r\n",
+					"\r\n",
+					"OPTIMIZE flights ZORDER BY (DayOfWeek);"
+				],
+				"execution_count": 12
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"flights_deltav2 = \\\r\n",
+					"    spark \\\r\n",
+					"        .read \\\r\n",
+					"        .format(\"delta\") \\\r\n",
+					"        .load('/tmp/flights_delta')"
+				],
+				"execution_count": 14
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"display(\r\n",
+					"    flights_deltav2\r\n",
+					"        .filter(\"DayOfWeek = 1\")\r\n",
+					"        .groupBy(\"Month\", \"Origin\")\r\n",
+					"        .agg(count(\"*\").alias(\"TotalFlights\"))\r\n",
+					"        .orderBy(\"TotalFlights\", ascending = False)\r\n",
+					"        .limit(20)\r\n",
+					")"
+				],
+				"execution_count": 15
 			}
 		]
 	}
