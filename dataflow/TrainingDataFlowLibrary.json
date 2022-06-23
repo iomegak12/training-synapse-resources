@@ -1,0 +1,14 @@
+{
+	"name": "TrainingDataFlowLibrary",
+	"properties": {
+		"type": "UDFLibrary",
+		"typeProperties": {
+			"sources": [],
+			"sinks": [],
+			"transformations": [],
+			"scriptLines": [
+				"ExConcat(string, string) as string = concat(i1, i2)"
+			]
+		}
+	}
+}
