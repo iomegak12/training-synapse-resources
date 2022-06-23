@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "3822d826-9728-4291-b3aa-ca815be45df1"
+				"spark.autotune.trackingId": "bbb28a5a-7c5d-4e22-91d9-f19a26c90d98"
 			}
 		},
 		"metadata": {
@@ -190,7 +190,7 @@
 				"source": [
 					"path = \"/IoTDeviceInfo.csv\"\r\n",
 					"\r\n",
-					"dfDeviceInfo = (spark.read.csv(path, header = True, inferSchema=True)"
+					"dfDeviceInfo = (spark.read.csv(path, header = True, inferSchema=True))"
 				],
 				"execution_count": 7
 			},

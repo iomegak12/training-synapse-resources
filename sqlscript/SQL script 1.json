@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 1",
+	"properties": {
+		"content": {
+			"query": "-- Create a stored procedure for storing the scoring script.\nCREATE PROCEDURE dbo.uspProcessHousePricing\nAS\nBEGIN\n-- Select input scoring data and assign aliases.\nWITH InputData AS\n(\n    SELECT\n        CAST([MedInc] AS [real]) AS [MedInc],\n        CAST([HouseAge] AS [real]) AS [HouseAge],\n        CAST([AveRooms] AS [real]) AS [AveRooms],\n        CAST([AveBedrms] AS [real]) AS [AveBedrms],\n        CAST([Population] AS [real]) AS [Population],\n        CAST([AveOccup] AS [real]) AS [AveOccup],\n        CAST([Latitude] AS [real]) AS [Latitude],\n        CAST([Longitude] AS [real]) AS [Longitude]\n    FROM [dbo].[CaliforniaTrain]\n)\n-- Using T-SQL Predict command to score machine learning models. \nSELECT *\nFROM PREDICT (MODEL = (SELECT [model] FROM dbo.ProcessedResults WHERE [ID] = 'trainingsynapseresources-californiatrain-20220623111249-Best:1'),\n              DATA = InputData,\n              RUNTIME = ONNX) WITH ([variable_out1] [real])\nEND\nGO\n\n-- Execute the above stored procedure.\nEXEC dbo.uspProcessHousePricing",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "SQLPool01v1",
+				"poolName": "SQLPool01v1"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
