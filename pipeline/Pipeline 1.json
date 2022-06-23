@@ -36,10 +36,47 @@
 						"mappings": [
 							{
 								"source": {
-									"ordinal": 1
+									"name": "rotortype",
+									"type": "String"
 								},
 								"sink": {
-									"path": "$"
+									"path": "$.rotortype"
+								}
+							},
+							{
+								"source": {
+									"name": "Latitude",
+									"type": "String"
+								},
+								"sink": {
+									"path": "$.latitude"
+								}
+							},
+							{
+								"source": {
+									"name": "deviceid",
+									"type": "String"
+								},
+								"sink": {
+									"path": "$.deviceid"
+								}
+							},
+							{
+								"source": {
+									"name": "Longitude",
+									"type": "String"
+								},
+								"sink": {
+									"path": "$.longitude"
+								}
+							},
+							{
+								"source": {
+									"name": "devicetype",
+									"type": "String"
+								},
+								"sink": {
+									"path": "$.devicetype"
 								}
 							}
 						]
