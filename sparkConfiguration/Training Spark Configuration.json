@@ -1,0 +1,14 @@
+{
+	"name": "Training Spark Configuration",
+	"properties": {
+		"configs": {
+			"spark.buffer.size": "65536"
+		},
+		"created": "2022-06-23T10:14:52.9600000+05:30",
+		"createdBy": "ramkumar@exonia64.onmicrosoft.com",
+		"annotations": [],
+		"configMergeRule": {
+			"artifact.currentOperation.spark.buffer.size": "replace"
+		}
+	}
+}
